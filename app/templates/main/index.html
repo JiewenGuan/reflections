@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}
+  HMD
+{% endblock title %}
+{% block head %}
+  {{ super() }}
+  
+{% endblock head %}
+{% block content %}
+  hmd page
+{% endblock content %}
+{% block scripts %}
+  {{ super() }}
+  <script type="module">
+    import {prepareSocket} from '/script/utils.js';
+    
+    const socket = prepareSocket();
+  </script>
+
+{% endblock scripts %}

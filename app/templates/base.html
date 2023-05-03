@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {% block head %}
+            <meta charset="utf-8" />
+            <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="description" content="Reflection Video Delivery" />
+        <meta name="keywords" content="Reflection, Video, Webrtc" />
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+            {% block styles %}
+            {% endblock styles %}
+            <title>
+                {% block title %}
+                {% endblock title %}
+            - Reflections</title>
+        {% endblock head %}
+    </head>
+    <body>
+        {% block content %}
+        {% endblock content %}
+        {% block scripts %}
+        <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"
+        integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H"
+        crossorigin="anonymous"></script>
+        {% endblock scripts %}
+    </body>
+</html>
