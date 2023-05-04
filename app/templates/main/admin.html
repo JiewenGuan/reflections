@@ -9,20 +9,18 @@
 {% block content %}
   <div class="card">
     <div class="card-header">
+      <form id="hmdSelectionForm">
       <ul class="nav nav-tabs card-header-tabs">
-        <li class="nav-item">
-          <a class="nav-link active" aria-current="true" href="#">Active</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Link</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-        </li>
+          <h5>Select HMD:</h5>
+          <div id="hmdSelect"></div>
+       
+        
         <li class="nav-item ms-auto">
-          <a class="btn btn-sm btn-primary">Refresh ALL</a>
+          <!-- TODO: refresh need to be refactored -->
+          <a class="btn btn-sm btn-primary" onclick="window.location.reload()">Refresh ALL</a>
         </li>
-      </ul>
+      </ul>        </form>        
+
     </div>
     <div class="card-body" id="vidCards">
       
@@ -69,6 +67,36 @@
       buttonGroup.appendChild(refresh);
       return card;
     }
+    function make_hmd_select(data){
+      const base = document.getElementById("hmdSelect");
+
+      if(data.length>0){
+        
+      
+      base.innerHTML = "";
+      for(let i = 0; i < data.length; i++){
+        let name = data[i]['name']?data[i]['name']:data[i]['id'];
+        let hmdDiv = document.createElement("div");
+        hmdDiv.classList.add("form-check", "form-check-inline");
+        let input = document.createElement("input");
+        input.classList.add("form-check-input");
+        input.type = "radio";
+        input.name = "hmd";
+        input.id = "hmd"+i;
+        input.value = name;
+        hmdDiv.appendChild(input);
+        let label = document.createElement("label");
+        label.classList.add("form-check-label");
+        label.htmlFor = "hmd"+i;
+        label.innerHTML = name;
+        hmdDiv.appendChild(label);
+        base.appendChild(hmdDiv);
+      }
+      base.childNodes[0].childNodes[0].checked = true;}
+      else{
+        base.innerHTML = "No HMD connected";
+      }
+    }
 
     socket.on("admin joined", () => {
       fetch('/video_devices')
@@ -81,6 +109,11 @@
           }
         }
       });
+      fetch('/get_hmds')
+      .then(response => response.json())
+      .then(data => {
+        make_hmd_select(data);
+      })
     })
 
     socket.on("admin rejected",()=>{

@@ -1,7 +1,7 @@
 from flask import request, session
 from flask_socketio import emit, join_room, leave_room,rooms
-from ..videoManager import VideoDevice
-from .. import socketio, videoManager
+from ..videoManager import Hmd, VideoDevice
+from .. import socketio, videoManager, hmds
 
 @socketio.on('connect')
 def connect():
@@ -9,8 +9,13 @@ def connect():
 
 @socketio.on('disconnect')
 def disconnect():
-    videoManager.remove_videoDeviceById(request.sid)
-    print(f'Client {request.sid} disconnected')
+    if(videoManager.remove_videoDeviceById(request.sid)):
+        print(f'Client {request.sid} disconnected')
+    else:
+        for hmd in hmds:
+            if(hmd.id == request.sid):
+                hmds.remove(hmd)
+
 
 @socketio.on('registerVidSource')
 def registerVidSource(data):
@@ -39,3 +44,8 @@ def refreshVideo(vidId):
 @socketio.on('videoRefreshed')
 def videoRefreshed(data):
     emit('videoRefreshed', data, to='admin')
+
+@socketio.on('register_hmd')
+def register_hmd():
+    join_room('hmd')
+    hmds.append(Hmd(request.sid))

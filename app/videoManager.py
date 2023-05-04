@@ -1,5 +1,3 @@
-from typing import List
-
 class ReprMixin(object):
     def __repr__(self):
         ret = '<{}:{}'.format(self.__class__.__name__, self.id)
@@ -27,7 +25,7 @@ class Source(ReprMixin):
 class VideoDevice(ReprMixin):
     def __init__(self, id):
         self.id = id
-        self.sources: List[Source] = []
+        self.sources: list[Source] = []
 
     def add_sources(self, source):
         for key,value in source.items():
@@ -43,7 +41,7 @@ class VideoDevice(ReprMixin):
 
 class VideoManager(ReprMixin):
     def __init__(self):
-        self.video_devices: List[VideoDevice] = []
+        self.video_devices: list[VideoDevice] = []
 
     def add_video_device(self, video_device):
         self.video_devices.append(video_device)
@@ -74,3 +72,32 @@ class VideoManager(ReprMixin):
                 if source.id == videoID:
                     return video_device.id
         return False
+    
+
+class Hmd(ReprMixin):
+    def __init__(self, id, view = None, name = ""):
+        self.id = id
+        self.view = view
+        self.name = name
+
+    def set_view(self, view):
+        self.view = view
+    
+    def set_name(self, name):
+        self.name = name
+
+    def get_name(self):
+        if(len(self.name)>0):
+            return self.name
+        else:
+            return self.id
+        
+    def to_dict(self):
+        ret = {
+            "id":self.id
+        }
+        if(self.view):
+            ret["view"] = self.view
+        if(len(self.name)>0):
+            ret["name"] = self.name
+        return ret

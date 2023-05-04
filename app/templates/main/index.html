@@ -2,19 +2,22 @@
 {% block title %}
   HMD
 {% endblock title %}
-{% block head %}
+{% block
+  head %}
   {{ super() }}
-  
 {% endblock head %}
 {% block content %}
-  hmd page
-{% endblock content %}
-{% block scripts %}
-  {{ super() }}
-  <script type="module">
-    import {prepareSocket} from '/script/utils.js';
-    
-    const socket = prepareSocket();
-  </script>
+  hmd page {%
+  endblock content %}
+  {% block scripts %}
+    {{ super() }}
+    <script type="module">
+  window.socket = io("wss://" + window.location.host);
 
-{% endblock scripts %}
+  socket.on("connect", () => {
+    socket.emit("register_hmd");
+  });
+
+ 
+    </script>
+  {% endblock scripts %}
