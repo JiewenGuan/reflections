@@ -18,8 +18,8 @@ class Camera(BaseCamera):
     @staticmethod
     def frames():
         camera = cv2.VideoCapture(Camera.video_source)
-        camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)  # set frame width to 640 pixels
-        camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)  # set frame height to 480 pixels
+        camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # set frame width to 640 pixels
+        camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # set frame height to 480 pixels
 
         if not camera.isOpened():
             raise RuntimeError('Could not start camera.')

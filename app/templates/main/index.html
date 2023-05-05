@@ -25,8 +25,8 @@ content %}
     import { VRButton } from 'three/addons/webxr/VRButton.js';
 
   const canvas = document.createElement('canvas');
-  canvas.width = 1280;
-  canvas.height = 720;
+  canvas.width = 640;
+  canvas.height = 480;
   const context = canvas.getContext('2d');
   const img = new Image();
 
@@ -52,8 +52,8 @@ content %}
   const renderer = new WebGLRenderer();
   renderer.setSize( window.innerWidth, window.innerHeight );
   document.body.appendChild( renderer.domElement );
-  const geometry = new PlaneGeometry( 1.28, 0.72);
-  geometry.translate(0,-0.1,-0.8);
+  const geometry = new PlaneGeometry( 0.64, 0.48);
+  geometry.translate(0,-0.06,-0.6);
 
   const texture = new CanvasTexture(canvas);
   const material = new MeshBasicMaterial({map: texture,});
