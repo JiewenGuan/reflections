@@ -1,6 +1,6 @@
 from flask import send_from_directory, session, redirect, url_for, render_template, request
 from . import main
-from .. import videoManager, hmds
+from .. import videoManager, hmdManager
 
 
 @main.route("/favicon.ico")
@@ -19,7 +19,7 @@ def video_devices():
 @main.route("/get_hmds")
 def get_hmds():
     ret = []
-    for hmd in hmds:
+    for hmd in hmdManager.hmds:
         ret.append(hmd.to_dict())
     return ret
 

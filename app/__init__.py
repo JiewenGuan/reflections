@@ -2,14 +2,16 @@ from flask import Flask
 from flask_socketio import SocketIO
 from secrets import token_hex
 from flask_cors import CORS
-from .videoManager import VideoManager, Hmd
+from .videoManager import VideoManager, HmdManager,Hmd, VideoDevice
 from flask_bootstrap import Bootstrap5
 
 
 socketio = SocketIO(cors_allowed_origins='*')
 
 videoManager:VideoManager = VideoManager()
-hmds:list[Hmd] = []
+hmdManager:HmdManager = HmdManager()
+
+
 
 def create_app(debug=False):
     """Create an application."""

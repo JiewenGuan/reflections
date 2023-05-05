@@ -70,20 +70,21 @@ class VideoManager(ReprMixin):
         for video_device in self.video_devices:
             for source in video_device.sources:
                 if source.id == videoID:
-                    return video_device.id
+                    return video_device
         return False
     
+    def update_source_by_id(self, id, preview):
+        for device in self.video_devices:
+            for source in device.sources:
+                if source.id == id:
+                    source.preview = preview
+                    return True
+        return False
 
 class Hmd(ReprMixin):
     def __init__(self, id, view = None, name = ""):
         self.id = id
         self.view = view
-        self.name = name
-
-    def set_view(self, view):
-        self.view = view
-    
-    def set_name(self, name):
         self.name = name
 
     def get_name(self):
@@ -101,3 +102,19 @@ class Hmd(ReprMixin):
         if(len(self.name)>0):
             ret["name"] = self.name
         return ret
+    
+
+class HmdManager:
+    def __init__(self) -> None:
+        self.hmds: list[Hmd] = []
+
+    def add_hmd(self, hmd):
+        self.hmds.append(hmd)
+
+    def get_hmd_by_id(self, id):
+        for hmd in self.hmds:
+            if hmd.id == id:
+                return hmd
+        return None
+    
+    

@@ -12,12 +12,48 @@
   {% block scripts %}
     {{ super() }}
     <script type="module">
+  const configuration = {
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  };
+  const peerConnection = new RTCPeerConnection();
+
   window.socket = io("wss://" + window.location.host);
+
+  peerConnection.addEventListener("icecandidate", (event) => {
+    console.log(event.candidate);
+    if (event.candidate) {
+      socket.emit("roomMessage", { room: sessionStorage.getItem("room"), "new-ice-candidate": event.candidate });
+    }
+  });
+
+  peerConnection.addEventListener('connectionstatechange', event => {
+    if (peerConnection.connectionState === 'connected') {
+        alert("p2p Connected");
+    }
+});
 
   socket.on("connect", () => {
     socket.emit("register_hmd");
   });
 
- 
+  socket.on("roomMessage", async (data) => {
+    if (data.hasOwnProperty("offer")) {
+      console.log(data['offer'])
+      sessionStorage.setItem("room", data["room"]);
+      peerConnection.setRemoteDescription(
+        new RTCSessionDescription(data["offer"])
+      );
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      socket.emit("roomMessage", { room: data["room"], answer: answer });
+    } else if (data.hasOwnProperty("new-ice-candidate")) {
+      console.log(data['new-ice-candidate'])
+      try {
+        await peerConnection.addIceCandidate(data['new-ice-candidate']);
+    } catch (e) {
+        console.error('Error adding received ice candidate', e);
+    }
+    }
+  });
     </script>
   {% endblock scripts %}

@@ -1,69 +1,118 @@
-{% extends "base.html" %} {% block title %} Video Source {% endblock title %} {%
-block head %} {{ super() }} {% endblock head %} {% block content %} Video Source
-<div id="vidContainer"></div>
-{% endblock content %} {% block scripts %} {{ super() }}
-<script type="module">
-  import {
-    prepareSocket,
-    getConnectedDevices,
-    playVideoFromCamera,
-    playAllVideoInput,
-  } from "/script/utils.js";
+{% extends "base.html" %}
+{% block title %}
+  Video Source
+{% endblock title %}
+{%
+block head %} {{ super() }}
+{% endblock head %}
+{% block content %}
+  Video Source
+  <div id="vidContainer"></div>
+{% endblock content %}
+{% block scripts %}
+  {{ super() }}
+  <script type="module">
+    import {
+      prepareSocket,
+      getConnectedDevices,
+      playVideoFromCamera,
+      playAllVideoInput,
+    } from "/script/utils.js";
 
-  window.socket = io("wss://" + window.location.host);
+    const configuration = {
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    };
+    const peerConnection = new RTCPeerConnection();
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
 
-  socket.on("connect", async function () {
+    window.socket = io("wss://" + window.location.host);
 
-    const mediaDev = await getConnectedDevices("videoinput");
-    if (mediaDev.length > 0) {
-      let width = 200;
-      let height = 150;
-      let canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      let video = document.createElement("video");
-      let devices = await getConnectedDevices("videoinput");
-      let ret = {};
-      for (let i = 0; i < devices.length; i++) {
-        video.srcObject = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: devices[i].deviceId },
-        });
+    peerConnection.addEventListener("icecandidate", (event) => {
+      console.log(event.candidate);
+      if (event.candidate) {
+        socket.emit("roomMessage", { room: sessionStorage.getItem("room"), "new-ice-candidate": event.candidate });
+      }
+    });
+
+    peerConnection.addEventListener('connectionstatechange', event => {
+      if (peerConnection.connectionState === 'connected') {
+          alert("p2p Connected");
+      }
+  });
+
+    socket.on("connect", async function () {
+      const mediaDev = await getConnectedDevices("videoinput");
+      if (mediaDev.length > 0) {
+        let width = 200;
+        let height = 150;
+        let canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        let video = document.createElement("video");
+        let devices = await getConnectedDevices("videoinput");
+        let ret = {};
+        for (let i = 0; i < devices.length; i++) {
+          video.srcObject = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: devices[i].deviceId },
+          });
+          await video.play();
+          let ctx = canvas.getContext("2d").drawImage(video, 0, 0, width, height);
+          ret[devices[i].deviceId] = {
+            label: devices[i].label,
+            preview: canvas.toDataURL("image/jpeg", 0.3),
+          };
+          video.srcObject = null;
+        }
+        socket.emit("registerVidSource", ret);
+        await playAllVideoInput(document.getElementById("vidContainer"));
+      } else {
+        document.getElementById("vidContainer").innerHTML = "No camera found";
+      }
+    });
+    socket.on("refreshPreview", async function (vidId) {
+      //TODO: handle null stream exception
+      let stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: vidId },
+      });
+
+      if (stream) {
+        let width = 200;
+        let height = 150;
+        let canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        let video = document.createElement("video");
+        let ret = {};
+        video.srcObject = stream;
         await video.play();
         let ctx = canvas.getContext("2d").drawImage(video, 0, 0, width, height);
-        ret[devices[i].deviceId] = {
-          label: devices[i].label,
-          preview: canvas.toDataURL("image/jpeg", 0.3),
-        };
-        video.srcObject = null;
+        (ret[vidId] = canvas.toDataURL("image/jpeg", 0.3)),
+          socket.emit("videoRefreshed", ret);
       }
-      socket.emit("registerVidSource", ret);
-      await playAllVideoInput(document.getElementById("vidContainer"));
-    } else {
-      document.getElementById("vidContainer").innerHTML = "No camera found";
-    }
-  });
-  socket.on("refreshPreview", async function(vidId){
-    //TODO: handle null stream exception
-    let stream = await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: vidId },
-    })
-    
-    
-    if(stream){
-      let width = 200;
-      let height = 150;
-      let canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      let video = document.createElement("video");
-      let ret = {};
-      video.srcObject = stream
-      await video.play();
-      let ctx = canvas.getContext("2d").drawImage(video, 0, 0, width, height);
-      ret[vidId] = canvas.toDataURL("image/jpeg", 0.3),
-      socket.emit("videoRefreshed", ret);
-    }
+    });
+    socket.on("projectOrder", async (data) => {
+      sessionStorage.setItem("room", data["room"]);
+      socket.emit("roomMessage",{'room':data['room'],'offer':offer})
+    });
 
-  })  
-</script>
+    socket.on("roomMessage", async(data)=>{
+      if(data.hasOwnProperty('answer')){
+        console.log(data['answer'])
+        const remoteDesc = new RTCSessionDescription(data['answer']);
+        await peerConnection.setRemoteDescription(remoteDesc)
+      }else if(data.hasOwnProperty('new-ice-candidate')){
+        console.log(data['new-ice-candidate'])
+        try {
+          await peerConnection.addIceCandidate(data['new-ice-candidate']);
+      } catch (e) {
+          console.error('Error adding received ice candidate', e);
+      }
+      }
+
+
+
+
+    });
+  </script>
 {% endblock scripts %}

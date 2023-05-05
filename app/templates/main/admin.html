@@ -1,138 +1,142 @@
-{% extends "main/video_source.html" %}
+{% extends "base.html" %}
 {% block title %}
   Admin
 {% endblock title %}
 {% block head %}
-  {{ super() }}
-  {{ bootstrap.load_css() }}
+  {{ super() }} {{ bootstrap.load_css() }}
 {% endblock head %}
 {% block content %}
   <div class="card">
     <div class="card-header">
       <form id="hmdSelectionForm">
-      <ul class="nav nav-tabs card-header-tabs">
+        <ul class="nav nav-tabs card-header-tabs">
           <h5>Select HMD:</h5>
           <div id="hmdSelect"></div>
-       
-        
-        <li class="nav-item ms-auto">
-          <!-- TODO: refresh need to be refactored -->
-          <a class="btn btn-sm btn-primary" onclick="window.location.reload()">Refresh ALL</a>
-        </li>
-      </ul>        </form>        
-
+          <li class="nav-item ms-auto">
+            <!-- TODO: refresh need to be refactored -->
+            <a class="btn btn-sm btn-primary" onclick="window.location.reload()">Refresh ALL</a>
+            <a class="btn btn-sm btn-primary" onclick="window.open('/video_source', '_blank')">Video Source</a>
+            <a class="btn btn-sm btn-primary" onclick="window.open('/', '_blank')">HMD</a>
+          </li>
+        </ul>
+      </form>
     </div>
-    <div class="card-body" id="vidCards">
-      
-    </div>
+    <div class="card-body" id="vidCards"></div>
   </div>
   {{ super() }}
 {% endblock content %}
 {% block scripts %}
   {{ super() }}
   <script type="module">
-    function make_card(vid) {
-      let card = document.createElement("div");
-      card.classList.add("card","d-inline-block", "m-1");
-      card.style.width = "18rem";
-      card.id = vid['id']
-      let img = document.createElement("img");
-      img.src = vid['preview'];
-      img.classList.add("card-img-top");
-      card.appendChild(img);
-      let cardBody = document.createElement("div");
-      cardBody.classList.add("card-body");
-      card.appendChild(cardBody);
-      let card_text = document.createElement("p");
-      card_text.classList.add("card-text");
-      card_text.innerHTML = vid['description'];
-      cardBody.appendChild(card_text);
-      let buttonGroup = document.createElement("div");
-      buttonGroup.classList.add("d-flex", "justify-content-between");
-      cardBody.appendChild(buttonGroup);
-      let project = document.createElement("a");
-      project.classList.add("btn", "btn-danger","me-auto");
-      project.innerHTML = "Project";
-      project.onclick = () => {
-        console.log("project clicked");
-      };
-      buttonGroup.appendChild(project);
-      let refresh = document.createElement("a");
-      refresh.classList.add("btn", "btn-primary", "ms-auto");
-      refresh.innerHTML = "Refresh";
-      refresh.onclick = (event) => {
-        const vidId = event.target.parentNode.parentNode.parentNode.id;
-        socket.emit("refreshPreview", vidId);
-      }
-      buttonGroup.appendChild(refresh);
-      return card;
-    }
-    function make_hmd_select(data){
-      const base = document.getElementById("hmdSelect");
 
-      if(data.length>0){
-        
-      
+    import {
+      prepareSocket,
+      getConnectedDevices,
+      playVideoFromCamera,
+      playAllVideoInput,
+    } from "/script/utils.js";
+
+    window.socket = io("wss://" + window.location.host);
+  
+  function make_card(vid) {
+    let card = document.createElement("div");
+    card.classList.add("card", "d-inline-block", "m-1");
+    card.style.width = "18rem";
+    card.id = vid["id"];
+    let img = document.createElement("img");
+    img.src = vid["preview"];
+    img.classList.add("card-img-top");
+    card.appendChild(img);
+    let cardBody = document.createElement("div");
+    cardBody.classList.add("card-body");
+    card.appendChild(cardBody);
+    let card_text = document.createElement("p");
+    card_text.classList.add("card-text");
+    card_text.innerHTML = vid["description"];
+    cardBody.appendChild(card_text);
+    let buttonGroup = document.createElement("div");
+    buttonGroup.classList.add("d-flex", "justify-content-between");
+    cardBody.appendChild(buttonGroup);
+    let project = document.createElement("a");
+    project.classList.add("btn", "btn-danger", "me-auto");
+    project.innerHTML = "Project";
+    project.onclick = () => {
+      const vidId = event.target.parentNode.parentNode.parentNode.id;
+      const form = document.getElementById("hmdSelectionForm");
+      socket.emit("projectOrder",{vidId:vidId,hmd:form.elements['hmd'].value});
+    };
+    buttonGroup.appendChild(project);
+    let refresh = document.createElement("a");
+    refresh.classList.add("btn", "btn-primary", "ms-auto");
+    refresh.innerHTML = "Refresh";
+    refresh.onclick = (event) => {
+      const vidId = event.target.parentNode.parentNode.parentNode.id;
+      socket.emit("refreshPreview", vidId);
+    };
+    buttonGroup.appendChild(refresh);
+    return card;
+  }
+  function make_hmd_select(data) {
+    const base = document.getElementById("hmdSelect");
+
+    if (data.length > 0) {
       base.innerHTML = "";
-      for(let i = 0; i < data.length; i++){
-        let name = data[i]['name']?data[i]['name']:data[i]['id'];
+      for (let i = 0; i < data.length; i++) {
+        let name = data[i]["name"] ? data[i]["name"] : data[i]["id"];
         let hmdDiv = document.createElement("div");
         hmdDiv.classList.add("form-check", "form-check-inline");
         let input = document.createElement("input");
         input.classList.add("form-check-input");
         input.type = "radio";
         input.name = "hmd";
-        input.id = "hmd"+i;
-        input.value = name;
+        input.id = "hmd" + i;
+        input.value = data[i]["id"];
         hmdDiv.appendChild(input);
         let label = document.createElement("label");
         label.classList.add("form-check-label");
-        label.htmlFor = "hmd"+i;
+        label.htmlFor = "hmd" + i;
         label.innerHTML = name;
         hmdDiv.appendChild(label);
         base.appendChild(hmdDiv);
       }
-      base.childNodes[0].childNodes[0].checked = true;}
-      else{
-        base.innerHTML = "No HMD connected";
-      }
+      base.childNodes[0].childNodes[0].checked = true;
+    } else {
+      base.innerHTML = "No HMD connected";
     }
-
-    socket.on("admin joined", () => {
-      fetch('/video_devices')
-      .then(response => response.json())
-      .then(data => {
+  }
+  socket.on("admin joined", () => {
+    fetch("/video_devices")
+      .then((response) => response.json())
+      .then((data) => {
         let vidCards = document.getElementById("vidCards");
-        for(let device in data) {
-          for(let vid of data[device]) {
+        for (let device in data) {
+          for (let vid of data[device]) {
             vidCards.appendChild(make_card(vid));
           }
         }
       });
-      fetch('/get_hmds')
-      .then(response => response.json())
-      .then(data => {
+    fetch("/get_hmds")
+      .then((response) => response.json())
+      .then((data) => {
         make_hmd_select(data);
-      })
-    })
+      });
+  });
 
-    socket.on("admin rejected",()=>{
-      alert("Admin rejected");
-      window.location.href = '/video_source'
-    })
+  socket.on("admin rejected", () => {
+    alert("Admin rejected");
+    window.location.href = "/video_source";
+  });
 
-    socket.on("videoRefreshed",(data)=>{
-      for(let key in data){
-        const cardToUpdate = document.getElementById(key);
-        cardToUpdate.children[0].src = data[key];
-      }
-    })
+  socket.on("videoRefreshed", (data) => {
+    for (let key in data) {
+      const cardToUpdate = document.getElementById(key);
+      cardToUpdate.children[0].src = data[key];
+    }
+  });
 
-    socket.emit("registerAdmin");
+  socket.emit("registerAdmin");
 
-    
-    
-    //document.getElementById("vidCards").appendChild(make_card());
+  //document.getElementById("vidCards").appendChild(make_card());
   </script>
   {{ bootstrap.load_js() }}
 {% endblock scripts %}
