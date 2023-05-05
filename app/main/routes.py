@@ -1,6 +1,7 @@
-from flask import send_from_directory, session, redirect, url_for, render_template, request
+from flask import Response, send_from_directory, session, redirect, url_for, render_template, request
 from . import main
 from .. import videoManager, hmdManager
+from ..camera_opencv import Camera
 
 
 @main.route("/favicon.ico")
@@ -38,7 +39,26 @@ def video_source():
 def admin():
     return render_template("main/admin.html")
 
+@main.route('/camera')
+def cameraPage():
+    return render_template("main/camera.html")
 
+def gen(camera:Camera):
+    """Video streaming generator function."""
+    yield b'--frame\r\n'
+    while True:
+        frame = camera.get_frame()
+        yield b'Content-Type: image/png\r\n\r\n' + frame + b'\r\n--frame\r\n'
+
+@main.route('/video_feed')
+def video_feed():
+    """Video streaming route. Put this in the src attribute of an img tag."""
+    return Response(gen(Camera()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame',
+                    headers={
+                        'Content-Security-Policy': "default-src 'self'",
+                        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+                    })
 
 
 @main.route('/capture', methods=['GET', 'POST'])

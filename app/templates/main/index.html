@@ -7,11 +7,83 @@
   {{ super() }}
 {% endblock head %}
 {% block content %}
-  hmd page {%
-  endblock content %}
-  {% block scripts %}
-    {{ super() }}
-    <script type="module">
+{% endblock
+content %}
+{% block scripts %}
+  {{ super() }}
+  <script async
+          src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.152.2/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import { VRButton } from 'three/addons/webxr/VRButton.js';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1280;
+  canvas.height = 720;
+  const context = canvas.getContext('2d');
+  const img = new Image();
+
+  //window.lastTime = Date.now();
+  img.onload = function() {
+  //let timediff = Date.now() - window.lastTime;
+  //console.log(timediff);
+  //window.lastTime = Date.now();
+  context.drawImage(img, 0, 0);
+    setTimeout(function() {
+      img.src = '{{ url_for('main.video_feed') }}';
+    }, 30);
+  };
+  img.src = '{{ url_for('main.video_feed') }}';
+
+  import { Scene, PerspectiveCamera,WebGLRenderer,PlaneGeometry,CanvasTexture,MeshBasicMaterial,Mesh,DoubleSide } from "three";
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+  const scene = new Scene();
+  const camera = new PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+  const renderer = new WebGLRenderer();
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  document.body.appendChild( renderer.domElement );
+  const geometry = new PlaneGeometry( 1.28, 0.72);
+  geometry.translate(0,-0.1,-0.8);
+
+  const texture = new CanvasTexture(canvas);
+  const material = new MeshBasicMaterial({map: texture,});
+  //const material = new MeshBasicMaterial({color: 0xffff00, side: DoubleSide} );
+  
+  document.body.appendChild( VRButton.createButton( renderer ) );
+  renderer.xr.enabled = true;
+
+  const plane = new Mesh( geometry, material );
+
+  scene.add( plane );
+
+  //camera.position.z = 0.6;
+
+  console.log(camera.position)
+  console.log(camera.rotation)
+  console.log(plane.position)
+  console.log(plane.rotation)
+  
+
+  renderer.setAnimationLoop( function () {
+    texture.needsUpdate = true;
+    plane.position.set(camera.position.x,camera.position.y,camera.position.z);
+    plane.rotation.set(camera.rotation.x,camera.rotation.y,camera.rotation.z);
+    renderer.render( scene, camera );
+  
+  } );
+  </script>
+  <!--abandoned webrtc infrastructures-->
+  <!--script type="module">
   const configuration = {
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
   };
@@ -55,5 +127,5 @@
     }
     }
   });
-    </script>
-  {% endblock scripts %}
+    </!--script-->
+{% endblock scripts %}
